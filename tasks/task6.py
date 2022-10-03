@@ -1,5 +1,4 @@
-import matplotlib.pyplot as plt
-
+from common.draw import draw_functions
 from expressions.expression import get_builder
 
 
@@ -23,19 +22,9 @@ def generate(function, left, right, n=10):
     return res, builder.build(res)
 
 
-def draw_functions(left, right, cells_count, name, *functions):
-    x = [i / cells_count for i in range(left * cells_count, right * cells_count)]
-    for function, style in functions:
-        y = [function(i) for i in x]
-        plt.plot(x, y, style)
-    plt.title(name)
-    plt.draw()
-    plt.show()
-
-
 s = "$pow(0.5, x) + cos(x)"
 a, b = 1, 30
-n = 4
+n = 20
 x = 7
 
 function = get_builder(False).build(s)
