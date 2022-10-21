@@ -1,6 +1,7 @@
-from expressions.expression import get_builder
-from common.draw import draw_functions
 from math import ceil, pi
+
+from common.draw import draw_functions
+from expressions.expression import get_builder
 
 EPS = 0.0001
 
@@ -58,6 +59,6 @@ if x1 is not None:
 solutions += [-i for i in solutions[1:]]
 print(solutions)
 
-draw_functions(min(solutions)-1, max(solutions)+1, 100, "red: sin(x), blue: x",
+draw_functions(min(solutions) - 1, max(solutions) + 1, 100, "red: sin(x), blue: x",
                [builder.build(f"{l} * sin(x)").calculate, "-r"],
                [builder.build("x").calculate, "-b"])
