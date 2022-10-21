@@ -50,7 +50,7 @@ namespace task8 {
         for (auto &worker: workers) {
             result += worker.get();
         }
-
+        
         return result;
     }
 

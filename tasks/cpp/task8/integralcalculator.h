@@ -4,11 +4,8 @@
 
 #include <functional>
 #include <thread>
-#include <atomic>
 #include <vector>
 #include <mutex>
-#include <pthread.h>
-#include <iostream>
 #include <future>
 
 namespace task8 {
