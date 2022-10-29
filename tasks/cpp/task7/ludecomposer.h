@@ -5,40 +5,39 @@
 #ifndef TASK8_LUDECOMPOSER_H
 #define TASK8_LUDECOMPOSER_H
 
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
+#include "BlasBasedMatrix.h"
+#include <boost/asio/thread_pool.hpp>
+#include <boost/asio/post.hpp>
+#include <mutex>
+#include <algorithm>
+#include <functional>
+#include <condition_variable>
+#include <thread>
 
 namespace task7 {
 
-    using namespace boost::numeric;
-    struct LU{
-        ublas::matrix<double> u;
-
-        explicit LU(ublas::matrix<double> &&u): u(u){
-        }
-
-        double& operator()(int i, int j){
-            return u(i, j);
-        }
-    };
-
-    class LU_decomposer {
+    class ILUDecomposer {
     public:
-        LU compute(const ublas::matrix<double> &a){
-            ublas::matrix<double> u = a;
-            unsigned long n = a.size1();
+        virtual std::pair<BlasBasedMatrix, BlasBasedMatrix> decompose(const BlasBasedMatrix& a) = 0;
 
-            ublas::vector<double> v;
-            v.
-
-            for(int i=0; i<n; ++i){
-                for(int j=i+1; j<n; ++j){
-                    for(int )
-                }
-            }
-        }
+        virtual ~ILUDecomposer() = default;
     };
 
+    class LUDecomposer : public ILUDecomposer {
+    public:
+        LUDecomposer() = default;
+
+        std::pair<BlasBasedMatrix, BlasBasedMatrix> decompose(const BlasBasedMatrix& a) override;
+    };
+
+    class ParallelLUDecomposer : public ILUDecomposer {
+    private:
+        boost::asio::thread_pool pool;
+    public:
+        ParallelLUDecomposer(size_t count): pool(count) {}
+
+        std::pair<BlasBasedMatrix, BlasBasedMatrix> decompose(const BlasBasedMatrix& a) override;
+    };
 }
 
 #endif //TASK8_LUDECOMPOSER_H

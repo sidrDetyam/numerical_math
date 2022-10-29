@@ -1,17 +1,20 @@
 #include <iostream>
+#include <cmath>
 #include "integralcalculator.h"
+#include <cstdio>
 
 using namespace task8;
 
-static void test(IIntegralCalculator &calculator){
-    double res = calculator.calculate([](double x){
-        return x;
-    }, 0, 1000, 100000000);
+static void test(IIntegralCalculator &calculator) {
+    double res = calculator.calculate([](double x) {
+        return log(1 + x);
+    }, 0, 2, 100000);
 
-    std::cout << res << std::endl;
+    printf("%.30f\n", res);
 }
 
-int main() {
+
+int main(int argc, char** argv) {
 
     ParallelIntegralCalculator calculator(4, std::make_unique<TrapezoidStrategy>());
     test(calculator);
