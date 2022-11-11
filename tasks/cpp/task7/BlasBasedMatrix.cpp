@@ -2,6 +2,7 @@
 // Created by argem on 29.10.2022.
 //
 
+#include <boost/numeric/ublas/matrix_expression.hpp>
 #include "BlasBasedMatrix.h"
 
 using namespace task7;
@@ -36,6 +37,10 @@ BlasBasedMatrix::BlasBasedMatrix(const std::vector<std::vector<double>>& m) :
     }
 }
 
+BlasBasedMatrix::BlasBasedMatrix(Base && b) noexcept : Base(b) {
+
+}
+
 std::ostream &operator<<(std::ostream &output, Base &matrix) {
     for (size_t i = 0; i < matrix.size1(); ++i) {
         for (size_t j = 0; j < matrix.size2(); ++j) {
@@ -46,4 +51,13 @@ std::ostream &operator<<(std::ostream &output, Base &matrix) {
         output << std::endl;
     }
     return output;
+}
+
+BlasBasedMatrix operator * (const Base& a, const Base& b){
+    Base c = prod(a, b);
+    return BlasBasedMatrix(std::move(c));
+}
+
+ublas::vector<double> operator * (const Base& a, const ublas::vector<double>& b){
+    return prod(a, b);
 }

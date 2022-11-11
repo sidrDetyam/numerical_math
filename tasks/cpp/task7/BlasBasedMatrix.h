@@ -25,11 +25,17 @@ namespace task7{
 
         explicit BlasBasedMatrix(const std::vector<std::vector<double>> &m);
 
+        explicit BlasBasedMatrix(Base&& ) noexcept;
+
         static BlasBasedMatrix id(size_t n);
 
         BlasBasedMatrix &daxpy(const double *line, size_t i, double c);
     };
 }
+
+task7::BlasBasedMatrix operator * (const task7::Base& a, const task7::Base& b);
+
+task7::ublas::vector<double> operator * (const task7::Base& a, const task7::ublas::vector<double>& b);
 
 std::ostream& operator <<(std::ostream& output, task7::Base& matrix);
 

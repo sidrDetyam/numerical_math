@@ -77,6 +77,7 @@ std::vector<double> LUDecomposer::solve(const BlasBasedMatrix &l,
     std::vector<double> y(b.size());
     std::vector<double> x(b.size());
     for(size_t i=0; i<b.size(); ++i){
+        assert(l(i, i));
         y[i] = b[i];
         for(size_t j=0; j<i; ++j){
             y[i] -= y[j] * l(i, j);
@@ -85,6 +86,7 @@ std::vector<double> LUDecomposer::solve(const BlasBasedMatrix &l,
     }
 
     for(int64_t i = static_cast<int64_t>(b.size()) - 1; i > -1; --i){
+        assert(u(i, i));
         x[i] = y[i];
         for(int64_t j = static_cast<int64_t>(b.size()) - 1; j > i; --j){
             x[i] -= x[j] * u(i, j);
