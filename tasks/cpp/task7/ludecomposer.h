@@ -16,25 +16,31 @@
 
 namespace task7 {
 
-    class ILUDecomposer {
+    class LUDecomposer {
     public:
         virtual std::pair<BlasBasedMatrix, BlasBasedMatrix> decompose(const BlasBasedMatrix& a) = 0;
 
-        virtual ~ILUDecomposer() = default;
+        static std::vector<double> solve(const BlasBasedMatrix &l,
+                                         const BlasBasedMatrix &u,
+                                         const std::vector<double>& b);
+
+        virtual ~LUDecomposer() = default;
     };
 
-    class LUDecomposer : public ILUDecomposer {
+    class SeqLUDecomposer : public LUDecomposer {
     public:
-        LUDecomposer() = default;
+        SeqLUDecomposer() = default;
 
         std::pair<BlasBasedMatrix, BlasBasedMatrix> decompose(const BlasBasedMatrix& a) override;
     };
 
-    class ParallelLUDecomposer : public ILUDecomposer {
+    class ParallelLUDecomposer : public LUDecomposer {
     private:
         boost::asio::thread_pool pool;
     public:
-        ParallelLUDecomposer(size_t count): pool(count) {}
+        ParallelLUDecomposer() = default;
+
+        explicit ParallelLUDecomposer(size_t count);
 
         std::pair<BlasBasedMatrix, BlasBasedMatrix> decompose(const BlasBasedMatrix& a) override;
     };
