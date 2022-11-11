@@ -16,7 +16,7 @@ double norm(const ublas::vector<double>& v){
     return res;
 }
 
-const double err = 0.00001;
+const double err = 0.001;
 
 ublas::vector<double> jacobi(const BlasBasedMatrix&a,
                            const ublas::vector<double>& b0,
@@ -46,6 +46,7 @@ ublas::vector<double> jacobi(const BlasBasedMatrix&a,
             cout << i << ' ';
         }
         cout << endl;
+        sleep(1);
 
         if(n < err){
             break;
@@ -58,15 +59,20 @@ ublas::vector<double> jacobi(const BlasBasedMatrix&a,
 
 int main(){
 
-    BlasBasedMatrix a(vector<vector<double>>({{4., -1, -1}, {-1., 4, -1}, {-1., -1, 4}}));
+    BlasBasedMatrix a(vector<vector<double>>({{1, 0.5, 0.333}, {0.5, 0.333, 0.25}, {0.333, 0.25, 0.2}}));
     ublas::vector<double> b(3);
     b(0) = 2; b(1) = 2; b(2) = 2;
     ublas::vector<double> x0(3);
-    x0(0) = 0; x0(1) = 0; x0(2) = 0;
+    x0(0) = 6.0; x0(1) = -48; x0(2) = 60;
 
     auto x = jacobi(a, b, x0);
     for(int i=0; i<x.size(); ++i){
         cout << x(i) << " ";
+    }
+
+    auto check = a * x;
+    for(double i:check){
+        cout << i << " ";
     }
     cout << endl;
 
