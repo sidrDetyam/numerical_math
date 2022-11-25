@@ -37,4 +37,8 @@ a = matrix([[20, 20, 0.],
             [15, 15, 5.],
             [0, 1, 1.]])
 
-solve(a, array([40, 35, 2.]))
+x = solve(a, array([40, 35, 2.]))
+
+print(x)
+print(a.dot(x))
+
