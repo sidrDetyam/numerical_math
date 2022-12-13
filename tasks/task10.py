@@ -72,7 +72,26 @@ def three_layer_cross(x0, x1, t1, h, tao, g, a):
     return x, y, z
 
 
-def 
+def implicit_central(x0, x1, t1, h, tao, g, a):
+    x, y, z = get_grid(x0, x1, t1, h, tao)
+    for i, x_ in enumerate(x):
+        z[i][0] = g(x_ - a * y[0])
+    alfa = [0]*x.size
+    beta = [0]*x.size
+    r = a * tao / h
+
+    for j in range(1, y.size):
+        alfa[0] = -r/2
+        beta[0] = z[0][j-1]
+        for i in range(1, x.size):
+            alfa[i] = r/2 / (-1 + (r/2)*alfa[i-1])
+            beta[i] = (-z[i][j-1] - (r/2)*beta[i-1]) / (-1 + (r/2)*alfa[i-1])
+
+        z[x.size-1][j] = beta[-1]
+        for i in range(x.size-2, -1, -1):
+            z[i][j] = alfa[i] * z[i+1][j] + beta[i]
+
+    return x, y, z
 
 
 def diff(z1, z2):
@@ -122,16 +141,20 @@ def g2(x):
 
 
 g = g1
+strategy = three_layer_cross
+x0 = 0
+x1 = 6
+t1 = 2
 
 
-x, y, z = analytical(0, 6, 5, 0.01, 0.01, g, 1)
+x, y, z = analytical(x0, x1, t1, 0.01, 0.01, g, 1)
 plot_surface(x, y, z, "Аналитическое")
 
 for h in np.linspace(0.5, 0.01, 8):
-    x, y, z = analytical(0, 6, 5, h, h / 2, g, 1)
-    _, _, z1 = three_layer_cross(0, 6, 5, h, h / 2, g, 1)
+    x, y, z = analytical(x0, x1, t1, h, h / 2, g, 1)
+    _, _, z1 = strategy(x0, x1, t1, h, h / 2, g, 1)
     xf, yf, zf = fix_grid(x, y, z1, 0.1, 0.1)
     _, _, z_diff = fix_grid(x, y, diff(z, z1), 0.1, 0.1)
 
     plot_surface(xf, yf, zf, f"h = {h}, погрешность = {l1_norm(z_diff)}")
-    plot_surface(xf, yf, z_diff, f"h = {h}, погрешность = {l1_norm(z_diff)}")
+    #plot_surface(xf, yf, z_diff, f"h = {h}, погрешность = {l1_norm(z_diff)}")
