@@ -6,8 +6,8 @@ import math
 from copy import deepcopy
 
 
-def plot_surface(x, y, z, title=""):
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+def _plot_surf(x, y, z, fig, ind, cnt):
+    ax = fig.add_subplot(1, cnt, ind, projection="3d")
 
     X, Y = np.meshgrid(x, y)
     z_ = np.linspace(0, 5, x.size * y.size)
@@ -21,16 +21,24 @@ def plot_surface(x, y, z, title=""):
     ax.set_xlabel('x')
     ax.set_ylabel('time')
 
-    surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
-                           linewidth=0, antialiased=False)
+    surf = ax.plot_surface(X, Y, Z, cmap=cm.plasma,
+                           linewidth=0, antialiased=True)
 
     mx = max([max(i) for i in z])
     mn = min([min(i) for i in z])
 
     ax.set_zlim(mn - abs(mn), mx + abs(mx))
     ax.zaxis.set_major_locator(LinearLocator(10))
-    ax.zaxis.set_major_formatter('{x:.02f}')
-    fig.colorbar(surf, shrink=0.5, aspect=5)
+    ax.zaxis.set_major_formatter('{x:.2f}')
+    fig.colorbar(surf, shrink=0.4, aspect=10)
+
+
+def plot_surfaces(surfs, title=""):
+    fig = plt.figure(figsize=plt.figaspect(1 / len(surfs)))
+
+    for i, s in enumerate(surfs):
+        x, y, z = s
+        _plot_surf(x, y, z, fig, i+1, len(surfs))
     plt.title(title)
     plt.show()
 
@@ -76,20 +84,20 @@ def implicit_central(x0, x1, t1, h, tao, g, a):
     x, y, z = get_grid(x0, x1, t1, h, tao)
     for i, x_ in enumerate(x):
         z[i][0] = g(x_ - a * y[0])
-    alfa = [0]*x.size
-    beta = [0]*x.size
+    alfa = [0] * x.size
+    beta = [0] * x.size
     r = a * tao / h
 
     for j in range(1, y.size):
-        alfa[0] = -r/2
-        beta[0] = z[0][j-1]
+        alfa[0] = -r / 2
+        beta[0] = z[0][j - 1]
         for i in range(1, x.size):
-            alfa[i] = r/2 / (-1 + (r/2)*alfa[i-1])
-            beta[i] = (-z[i][j-1] - (r/2)*beta[i-1]) / (-1 + (r/2)*alfa[i-1])
+            alfa[i] = r / 2 / (-1 + (r / 2) * alfa[i - 1])
+            beta[i] = (-z[i][j - 1] - (r / 2) * beta[i - 1]) / (-1 + (r / 2) * alfa[i - 1])
 
-        z[x.size-1][j] = beta[-1]
-        for i in range(x.size-2, -1, -1):
-            z[i][j] = alfa[i] * z[i+1][j] + beta[i]
+        z[x.size - 1][j] = beta[-1]
+        for i in range(x.size - 2, -1, -1):
+            z[i][j] = alfa[i] * z[i + 1][j] + beta[i]
 
     return x, y, z
 
@@ -143,18 +151,19 @@ def g2(x):
 g = g1
 strategy = three_layer_cross
 x0 = 0
-x1 = 6
+x1 = 6.5
 t1 = 2
+a = 1.337
+demo_h = 0.05
 
+x, y, z = analytical(x0, x1, t1, demo_h, demo_h, g, a)
 
-x, y, z = analytical(x0, x1, t1, 0.01, 0.01, g, 1)
-plot_surface(x, y, z, "Аналитическое")
-
-for h in np.linspace(0.5, 0.01, 8):
-    x, y, z = analytical(x0, x1, t1, h, h / 2, g, 1)
-    _, _, z1 = strategy(x0, x1, t1, h, h / 2, g, 1)
-    xf, yf, zf = fix_grid(x, y, z1, 0.1, 0.1)
-    _, _, z_diff = fix_grid(x, y, diff(z, z1), 0.1, 0.1)
-
-    plot_surface(xf, yf, zf, f"h = {h}, погрешность = {l1_norm(z_diff)}")
-    #plot_surface(xf, yf, z_diff, f"h = {h}, погрешность = {l1_norm(z_diff)}")
+for h in np.linspace(0.5, 0.005, 8):
+    tao = h/2
+    xa, ya, za = analytical(x0, x1, t1, h, tao, g, a)
+    _, _, zs = strategy(x0, x1, t1, h, tao, g, a)
+    xsf, ysf, zsf = fix_grid(xa, ya, zs, demo_h, demo_h)
+    _, _, z_diff = fix_grid(xa, ya, diff(zs, za), demo_h, demo_h)
+    norm = l1_norm(z_diff)
+    plot_surfaces([(x, y, z), (xsf, ysf, zsf), (xsf, ysf, z_diff)],
+                  f"h = {h}, tao = {tao} погрешность = %.3f" % norm)
