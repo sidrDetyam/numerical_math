@@ -38,7 +38,7 @@ def plot_surfaces(surfs, title=""):
 
     for i, s in enumerate(surfs):
         x, y, z = s
-        _plot_surf(x, y, z, fig, i+1, len(surfs))
+        _plot_surf(x, y, z, fig, i + 1, len(surfs))
     plt.title(title)
     plt.show()
 
@@ -90,10 +90,12 @@ def implicit_central(x0, x1, t1, h, tao, g, a):
 
     for j in range(1, y.size):
         alfa[0] = -r / 2
-        beta[0] = z[0][j - 1]
+        beta[0] = z[0][j - 1] - g(x[0] - h - a * y[j])
         for i in range(1, x.size):
             alfa[i] = r / 2 / (-1 + (r / 2) * alfa[i - 1])
             beta[i] = (-z[i][j - 1] - (r / 2) * beta[i - 1]) / (-1 + (r / 2) * alfa[i - 1])
+        # i = x.size - 1
+        # beta[i] = (-(z[i][j - 1] - g(x[0]+h*i - a*y[j])) - (r / 2) * beta[i - 1]) / (-1 + (r / 2) * alfa[i - 1])
 
         z[x.size - 1][j] = beta[-1]
         for i in range(x.size - 2, -1, -1):
@@ -121,10 +123,10 @@ def l1_norm(z):
     return norm
 
 
-def fix_grid(x, y, z, h, tao):
+def fix_grid(x, y, z, h, tao, forced=False):
     h_orig = x[1] - x[0]
     tao_orig = y[1] - y[0]
-    if h_orig > h:
+    if h_orig > h and not forced:
         return x, y, z
 
     x_, y_, z_ = get_grid(x[0], x[x.size - 1], y[y.size - 1], h, tao)
@@ -148,22 +150,46 @@ def g2(x):
     return 3
 
 
+g3 = lambda x: math.sin(math.pi * (x - 1) / 3)
+g4 = lambda x: math.sin(math.pi * (x - 1) / 3) / (x + 10) * 2
+
 g = g1
+#strategy = implicit_central
 strategy = three_layer_cross
 x0 = 0
 x1 = 6.5
 t1 = 2
-a = 1.337
-demo_h = 0.05
+a = 1.25
+demo_h = 0.1
+
+
+def time_slice(z):
+    t_slice = len(z[0])//2
+    return [z[i][t_slice] for i in range(len(z))]
+
+
+def draw_functions(x, name, functions):
+    for function, style in functions:
+        y = [function[i] for i in range(x.size)]
+        plt.plot(x, y, style)
+    plt.title(name)
+    plt.grid()
+    plt.draw()
+    plt.show()
+
 
 x, y, z = analytical(x0, x1, t1, demo_h, demo_h, g, a)
+slices = [[time_slice(fix_grid(x, y, z, demo_h, demo_h, True)[2]), "-g"]]
 
 for h in np.linspace(0.5, 0.005, 8):
-    tao = h/2
+    tao = h / 2
     xa, ya, za = analytical(x0, x1, t1, h, tao, g, a)
     _, _, zs = strategy(x0, x1, t1, h, tao, g, a)
     xsf, ysf, zsf = fix_grid(xa, ya, zs, demo_h, demo_h)
     _, _, z_diff = fix_grid(xa, ya, diff(zs, za), demo_h, demo_h)
     norm = l1_norm(z_diff)
+    slices.append([time_slice(fix_grid(xsf, ysf, zsf, demo_h, demo_h, True)[2]), "-r"])
     plot_surfaces([(x, y, z), (xsf, ysf, zsf), (xsf, ysf, z_diff)],
                   f"h = {h}, tao = {tao} погрешность = %.3f" % norm)
+
+draw_functions(x, f"t = {t1/2}", slices[::-2])
