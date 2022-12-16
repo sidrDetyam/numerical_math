@@ -36,7 +36,7 @@ def l1_norm(y):
     return max(map(abs, y))
 
 
-h = 0.5
+h = 0.1
 x0 = 0
 x1 = 5
 y0 = 0
@@ -57,12 +57,13 @@ for i in range(1, n):
     y_[i] = y(x__)
     if i == 1:
         y_h2[i] = (1 + h) * y_h2[0]
-        y_h4[i] = h * (g(x__) + 4 * g(x__ - h)) / 3
+        y_h4[i] = y_h4[i-1] + h * (g(x__) + 4 * g(x__ - h)) / 3
     else:
-        y_h2[i] = y_h2[i - 2] + 2 * h * g(x__ - h)  #y_h2[i - 2] + h * (g(x__) + g(x__ - 2 * h))
-        y_h4[i] = y_h4[i - 2] + h * (g(x__ + h) + 4 * g(x__) + g(x__ - h))/3
+        y_h2[i] = y_h2[i - 2] + 2 * h * g(x__ - h)
+        #y_h2[i] = y_h2[i - 2] + h * (g(x__) + g(x__ - 2 * h))
+        y_h4[i] =  y_h4[i - 2] + h * (g(x__ + h) + 4 * g(x__) + g(x__ - h))/3
 
 
-draw_functions([x0 + h*i for i in range(n)], "", [y_, "-r"], [y_h4, "-b"], [y_h2, "-g"])
+draw_functions([x0 + h*i for i in range(n)], "", [y_, "-b"], [y_h4, "-g"], [y_h2, "-r"])
 print(f"y_h2 {l1_norm(diff(y_, y_h4))}")
 print(f"y_h4 {l1_norm(diff(y_, y_h2))}")

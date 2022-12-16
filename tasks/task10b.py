@@ -91,10 +91,10 @@ def l1_norm(z):
     return norm
 
 
-def fix_grid(x, y, z, h, tao):
+def fix_grid(x, y, z, h, tao, forced=False):
     h_orig = x[1] - x[0]
     tao_orig = y[1] - y[0]
-    if h_orig > h:
+    if h_orig > h and not forced:
         return x, y, z
 
     x_, y_, z_ = get_grid(x[0], x[x.size - 1], y[y.size - 1], h, tao)
@@ -133,9 +133,31 @@ t1 = 1
 demo_h = 0.05
 
 
+def time_slice(z):
+    t_slice = len(z[0])//2
+    return [z[i][t_slice] for i in range(len(z))]
+
+slices = []
+x = None
+
+def draw_functions(x, name, functions):
+    for function, style in functions:
+        y = [function[i] for i in range(x.size)]
+        plt.plot(x, y, style)
+    plt.title(name)
+    plt.grid()
+    plt.draw()
+    plt.show()
+
+
 for h in np.linspace(0.5, 0.005, 8):
-    tao = h/10
+    tao = h * 0.98
     xs, ys, zs = strategy(x0, x1, t1, h, tao, g, l)
     xsf, ysf, zsf = fix_grid(xs, ys, zs, demo_h, demo_h)
+    if h==0.005:
+        slices.append([time_slice(fix_grid(xsf, ysf, zsf, demo_h, demo_h, True)[2]), "-g"])
+    x = xsf
     plot_surfaces([(xsf, ysf, zsf)],
                   f"h = {h}, tao = {tao}")
+
+draw_functions(x, f"t = {t1/2}", slices)

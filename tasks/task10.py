@@ -1,9 +1,10 @@
-import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator
-import numpy as np
 import math
 from copy import deepcopy
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator
 
 
 def _plot_surf(x, y, z, fig, ind, cnt):
@@ -43,15 +44,15 @@ def plot_surfaces(surfs, title=""):
     plt.show()
 
 
-def get_grid(x0, x1, t1, h, tao):
-    x = np.linspace(x0, x1, int((x1 - x0) / h))
-    y = np.linspace(0, t1, int(t1 / tao))
-    z = [[0 for i in range(y.size)] for j in range(x.size)]
+def get_grid(x0, x1, t1, n, k):
+    x = np.linspace(x0, x1, n)
+    y = np.linspace(0, t1, k)
+    z = [[0]*k for _ in range(n)]
     return x, y, z
 
 
-def analytical(x0, x1, t1, h, tao, g, a):
-    x, y, z = get_grid(x0, x1, t1, h, tao)
+def analytical(x0, x1, t1, n, k, g, a):
+    x, y, z = get_grid(x0, x1, t1, n, k)
     for i, x_ in enumerate(x):
         for j, y_ in enumerate(y):
             z[i][j] = g(x_ - a * y_)
@@ -59,8 +60,8 @@ def analytical(x0, x1, t1, h, tao, g, a):
     return x, y, z
 
 
-def three_layer_cross(x0, x1, t1, h, tao, g, a):
-    x, y, z = get_grid(x0, x1, t1, h, tao)
+def three_layer_cross(x0, x1, t1, n, k, g, a):
+    x, y, z = get_grid(x0, x1, t1, n, k)
     for i, x_ in enumerate(x):
         for j in range(2):
             z[i][j] = g(x_ - a * y[j])
@@ -69,6 +70,8 @@ def three_layer_cross(x0, x1, t1, h, tao, g, a):
         z[0][j] = g(x[0] - a * y[j])
         z[x.size - 1][j] = g(x[x.size - 1] - a * y[j])
 
+    h = (x1 - x0) / n
+    tao = t1 / k
     r = a * tao / h
     if abs(r) >= 1:
         raise ValueError
@@ -80,12 +83,14 @@ def three_layer_cross(x0, x1, t1, h, tao, g, a):
     return x, y, z
 
 
-def implicit_central(x0, x1, t1, h, tao, g, a):
-    x, y, z = get_grid(x0, x1, t1, h, tao)
+def implicit_central(x0, x1, t1, n, k, g, a):
+    x, y, z = get_grid(x0, x1, t1, n, k)
     for i, x_ in enumerate(x):
         z[i][0] = g(x_ - a * y[0])
     alfa = [0] * x.size
     beta = [0] * x.size
+    h = (x1 - x0) / n
+    tao = t1 / k
     r = a * tao / h
 
     for j in range(1, y.size):
@@ -116,11 +121,7 @@ def diff(z1, z2):
 
 
 def l1_norm(z):
-    norm = 0
-    for i in range(len(z)):
-        for j in range(len(z[0])):
-            norm = max(norm, abs(z[i][j]))
-    return norm
+    return max(map(max, z))
 
 
 def fix_grid(x, y, z, h, tao, forced=False):
@@ -153,18 +154,9 @@ def g2(x):
 g3 = lambda x: math.sin(math.pi * (x - 1) / 3)
 g4 = lambda x: math.sin(math.pi * (x - 1) / 3) / (x + 10) * 2
 
-g = g1
-#strategy = implicit_central
-strategy = three_layer_cross
-x0 = 0
-x1 = 6.5
-t1 = 2
-a = 1.25
-demo_h = 0.1
-
 
 def time_slice(z):
-    t_slice = len(z[0])//2
+    t_slice = len(z[0]) // 2
     return [z[i][t_slice] for i in range(len(z))]
 
 
@@ -178,18 +170,43 @@ def draw_functions(x, name, functions):
     plt.show()
 
 
-x, y, z = analytical(x0, x1, t1, demo_h, demo_h, g, a)
-slices = [[time_slice(fix_grid(x, y, z, demo_h, demo_h, True)[2]), "-g"]]
+def runge_rule(z, z2, p, t = None):
+    if t == None:
+        t = len(z[0])//2
+    z_ = [z[i][t] for i in range(len(z))]
+    z2_ = [0]*len(z)
+    for i in range(len(z)):
+        z2_[i] = z2[2 * i][2 * t]
+    return l1_norm(diff([z_], [z2_])) / (2**p - 1)
 
-for h in np.linspace(0.5, 0.005, 8):
-    tao = h / 2
-    xa, ya, za = analytical(x0, x1, t1, h, tao, g, a)
-    _, _, zs = strategy(x0, x1, t1, h, tao, g, a)
-    xsf, ysf, zsf = fix_grid(xa, ya, zs, demo_h, demo_h)
-    _, _, z_diff = fix_grid(xa, ya, diff(zs, za), demo_h, demo_h)
-    norm = l1_norm(z_diff)
-    slices.append([time_slice(fix_grid(xsf, ysf, zsf, demo_h, demo_h, True)[2]), "-r"])
-    plot_surfaces([(x, y, z), (xsf, ysf, zsf), (xsf, ysf, z_diff)],
-                  f"h = {h}, tao = {tao} погрешность = %.3f" % norm)
 
-draw_functions(x, f"t = {t1/2}", slices[::-2])
+g = g1
+# strategy = implicit_central
+strategy = three_layer_cross
+x0 = 0
+x1 = 6.5
+t1 = 2
+a = 1
+demo_n = 50
+demo_k = int(2 * t1 / ((x1-x0)/demo_n))
+is_pres = False
+
+#x, y, z = analytical(x0, x1, t1, demo_h, demo_h, g, a)
+# slices = [[time_slice(fix_grid(x, y, z, demo_h, demo_h, True)[2]), "-g"]]
+
+for n in range(30, 300, 30):
+    k = int(2 * t1 / ((x1-x0)/n))
+    xa, ya, za = analytical(x0, x1, t1, n, k, g, a)
+    _, _, zs = strategy(x0, x1, t1, n, k, g, a)
+    _, _, zs2 = strategy(x0, x1, t1, n*2, k*2, g, a)
+    print(f"n = {n}, r = {runge_rule(zs, zs2, 2)}")
+
+    if is_pres:
+        xaf, yaf, zaf = fix_grid(xa, ya, za, demo_n, demo_k)
+        _, _, zsf = fix_grid(xa, ya, zs, demo_n, demo_k)
+        _, _, z_diff = fix_grid(xa, ya, diff(zs, za), demo_n, demo_k)
+        #norm = l1_norm(z_diff)
+        #slices.append([time_slice(fix_grid(xsf, ysf, zsf, demo_h, demo_h, True)[2]), "-r"])
+        plot_surfaces([(xaf, yaf, zaf), (xaf, yaf, zsf), (xaf, yaf, z_diff)], f"n = {n}, k = {k}")
+
+# draw_functions(x, f"t = {t1/2}", slices[::-2])
