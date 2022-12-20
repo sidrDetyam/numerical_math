@@ -182,31 +182,48 @@ def three_layer_cross_not_linear(x0, x1, t1, n, k, g, l, r):
     return x, y, z
 
 
-# def implicit_non_linear(x0, x1, t1, n, k, g, l):
-#     x, y, z = get_grid(x0, x1, t1, n, k)
-#     for i, x_ in enumerate(x):
-#         z[i][0] = g(x_)
-#     alfa = [0] * x.size
-#     beta = [0] * x.size
-#     h = (x1 - x0) / n
-#     tao = t1 / k
-#
-#     for j in range(1, y.size):
-#         uu = [z[i][j-1] for i in range(x.size)]
-#
-#         alfa[0] = -r / 2
-#         beta[0] = z[0][j - 1] - g(x[0] - h - a * y[j])
-#         for i in range(1, x.size):
-#             alfa[i] = r / 2 / (-1 + (r / 2) * alfa[i - 1])
-#             beta[i] = (-z[i][j - 1] - (r / 2) * beta[i - 1]) / (-1 + (r / 2) * alfa[i - 1])
-#         # i = x.size - 1
-#         # beta[i] = (-(z[i][j - 1] - g(x[0]+h*i - a*y[j])) - (r / 2) * beta[i - 1]) / (-1 + (r / 2) * alfa[i - 1])
-#
-#         z[x.size - 1][j] = beta[-1]
-#         for i in range(x.size - 2, -1, -1):
-#             z[i][j] = alfa[i] * z[i + 1][j] + beta[i]
-#
-#     return x, y, z
+def implicit_non_linear(x0, x1, t1, n, k, g, l, r):
+    x, y, z = get_grid(x0, x1, t1, n, k)
+    for i, x_ in enumerate(x):
+        z[i][0] = g(x_)
+    alfa = [0] * x.size
+    beta = [0] * x.size
+    h = (x1 - x0) / n
+    tao = t1 / k
+
+    for j in range(1, y.size):
+        uu0 = [z[i][j-1] for i in range(x.size)]
+        uu = [z[i][j-1] for i in range(x.size)]
+        uu1 = [0] * x.size
+        for m in range(10):
+            alfa[0] = (uu[1]/2/h) * tao * -1
+            beta[0] = (uu0[0] / tao + l(j*tao)**2 / (2*h)) / (1/tao)
+            for i in range(1, n-1):
+                a0 = -uu[i-1] / 2/h
+                a1 = 1/tao
+                a2 = uu[i+1] / 2 / h
+                b = uu0[i] / tao
+
+                alfa[i] = (a2) / (-a1 - a0*alfa[i-1])
+                beta[i] = (a0*beta[i-1] - b) / (-a1 - a0*alfa[i-1])
+
+            a0 = -uu[n - 2] / 2 / h
+            a1 = 1 / tao
+            a2 = 0
+            b = uu0[n-1] / tao - r(j*tao)**2 / (2*h)
+            alfa[n-1] = 0
+            beta[n-1] = (a0*beta[n-2] - b) / ( - a1 - a0*alfa[n-2])
+
+            uu1[n-1] = beta[n-1]
+            for i in range(n-2, -1, -1):
+                uu1[i] = alfa[i] * uu1[i+1] + beta[i]
+
+            uu = deepcopy(uu1)
+
+        for i in range(x.size):
+            z[i][j] = uu1[i]
+
+    return x, y, z
 
 
 def time_slice(z):
@@ -262,13 +279,13 @@ def non_linear(g, l, r, mxg, x0, x1, t1, strategy, inf, is_pres=True):
     demo_n = 50
     demo_k = int(2 * t1 / ((x1 - x0) / demo_n))
 
-    for n in range(30, 300, 30):
+    for n in range(60, 300, 60):
         k = int(2 * mxg * t1 / ((x1 - x0) / n))
         x, y, z = strategy(x0, x1, t1, n, k, g, l, r)
         _, _, z2 = strategy(x0, x1, t1, n * 2, k * 2, g, l, r)
         print(f"n = {n}, r = {runge_rule(z, z2, 2)}")
 
-        if n == 270:
+        if n == 240:
             draw_functions(x, f"t = {t1 / 2}", [[time_slice(fix_grid(x, y, z, n, k, True)[2]), "-r"]])
 
         if is_pres:
@@ -277,5 +294,6 @@ def non_linear(g, l, r, mxg, x0, x1, t1, strategy, inf, is_pres=True):
 
 
 #linear(g1, 1, 6.5, 2, 1.25, three_layer_cross)
-non_linear(g2, lambda t: 2, lambda t: 1, 2, -3, 3, 1, three_layer_cross_not_linear, 30)
+non_linear(g2, lambda t: 2, lambda t: 1, 3, -3, 3, 1, implicit_non_linear, 30)
+non_linear(g1, lambda t: 0, lambda t: 0, 1.5, 1, 6.5, 1, implicit_non_linear, 30)
 
